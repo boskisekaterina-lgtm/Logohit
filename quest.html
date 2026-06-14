@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Квест Васи 🗺️</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Baloo+2:wght@400;700;800&display=swap');
+
+:root {
+  --ink: #1a1a2e;
+  --parchment: #f5e6c8;
+  --parchment2: #ede0b5;
+  --gold: #d4a017;
+  --gold2: #f0c040;
+  --red: #c0392b;
+  --green: #27ae60;
+  --blue: #2980b9;
+  --shadow: rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #1a1a2e;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── STARS BACKGROUND ── */
+.stars {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(212,160,23,.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(41,128,185,.08) 0%, transparent 60%);
+}
+.star {
+  position: fixed; background: white; border-radius: 50%;
+  animation: twinkle linear infinite;
+  pointer-events: none;
+}
+@keyframes twinkle {
+  0%,100% { opacity: .2; transform: scale(1); }
+  50%      { opacity: .9; transform: scale(1.4); }
+}
+
+/* ── SCROLL ── */
+.scroll-wrap {
+  position: relative; z-index: 10;
+  max-width: 560px; margin: 0 auto;
+  padding: 20px 14px 60px;
+}
+
+/* ── HEADER MAP ── */
+.map-header {
+  background: var(--parchment);
+  border-radius: 16px 16px 0 0;
+  border: 4px solid var(--gold);
+  border-bottom: none;
+  padding: 20px 20px 10px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.map-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 10px,
+    rgba(212,160,23,.06) 10px, rgba(212,160,23,.06) 11px
+  );
+}
+.map-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  color: var(--ink);
+  text-shadow: 1px 1px 0 var(--gold2);
+  position: relative;
+}
+.map-subtitle {
+  font-size: .9rem; font-weight: 800;
+  color: #7a5c1e; margin-top: 2px;
+  letter-spacing: .08em; text-transform: uppercase;
+  position: relative;
+}
+
+/* ── DOTTED PATH ── */
+.map-body {
+  background: var(--parchment);
+  border: 4px solid var(--gold);
+  border-top: none;
+  padding: 8px 20px 24px;
+  border-radius: 0 0 16px 16px;
+  position: relative;
+}
+
+/* path line between tasks */
+.path-line {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 0;
+}
+.path-dots {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 6px 0;
+}
+.path-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold); opacity: .5;
+}
+
+/* ── TASK CARD ── */
+.task-card {
+  background: white;
+  border-radius: 18px;
+  border: 3px solid #ddd;
+  overflow: hidden;
+  box-shadow: 0 4px 0 #bbb, 0 8px 20px rgba(0,0,0,.1);
+  transition: transform .2s, box-shadow .2s;
+  margin: 8px 0;
+}
+.task-card.done {
+  border-color: var(--green);
+  box-shadow: 0 4px 0 #1a8a45, 0 8px 20px rgba(39,174,96,.15);
+}
+.task-card.locked {
+  opacity: .55; filter: grayscale(.4);
+}
+
+.task-top {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px 12px;
+  cursor: pointer; user-select: none;
+}
+.task-num {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Baloo 2', cursive; font-size: 1.3rem; font-weight: 800;
+  color: white; flex-shrink: 0;
+  box-shadow: 0 3px 0 rgba(0,0,0,.25);
+}
+.n1 { background: linear-gradient(135deg,#e74c3c,#c0392b); }
+.n2 { background: linear-gradient(135deg,#e67e22,#d35400); }
+.n3 { background: linear-gradient(135deg,#8e44ad,#6c3483); }
+
+.task-info { flex: 1; }
+.task-label {
+  font-size: .72rem; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: #999; margin-bottom: 2px;
+}
+.task-name {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.05rem; font-weight: 800; color: var(--ink);
+  line-height: 1.25;
+}
+.task-badge {
+  font-size: 1.6rem; flex-shrink: 0;
+}
+.task-check {
+  font-size: 1.8rem; flex-shrink: 0; display: none;
+}
+.done .task-check { display: block; }
+.done .task-badge { display: none; }
+
+/* expand area */
+.task-body {
+  display: none; padding: 0 16px 16px;
+  border-top: 2px dashed #eee;
+  animation: slideDown .3s ease;
+}
+.task-body.open { display: block; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task-desc {
+  font-size: .95rem; font-weight: 700; color: #444;
+  line-height: 1.65; padding: 12px 0 10px;
+}
+.task-desc strong { color: var(--ink); }
+
+/* action button */
+.action-btn {
+  width: 100%; border: none; border-radius: 14px;
+  padding: 12px 18px; font-size: 1rem; font-weight: 900;
+  cursor: pointer; font-family: 'Baloo 2', cursive;
+  transition: all .2s; color: white;
+  box-shadow: 0 5px 0 rgba(0,0,0,.25);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.action-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 rgba(0,0,0,.25); }
+.action-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.btn-red    { background: linear-gradient(135deg,#e74c3c,#c0392b); }
+.btn-orange { background: linear-gradient(135deg,#f39c12,#d35400); }
+.btn-purple { background: linear-gradient(135deg,#9b59b6,#6c3483); }
+.btn-green  { background: linear-gradient(135deg,#27ae60,#1e8449); }
+
+/* hint reveal box */
+.hint-box {
+  display: none; margin-top: 12px;
+  background: linear-gradient(135deg, #fff9e6, #fff3cc);
+  border: 2px solid var(--gold);
+  border-radius: 14px; padding: 12px 14px;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+.hint-box.show { display: block; }
+@keyframes popIn {
+  from { opacity: 0; transform: scale(.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.hint-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: .85rem; color: var(--gold); font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px;
+}
+.hint-text {
+  font-size: .95rem; font-weight: 700; color: #5a3e00; line-height: 1.55;
+}
+
+/* ── JUMP MINI-GAME ── */
+.jump-game {
+  background: #e8f4fd;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 10px 0;
+  text-align: center;
+}
+.barriers {
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap; margin: 10px 0;
+}
+.barrier {
+  width: 38px; height: 38px; background: linear-gradient(180deg,#e74c3c,#922b21);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 4px solid #7b241c;
+  cursor: pointer;
+  transition: transform .15s;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 2px; font-size: 1.3rem;
+}
+.barrier:hover { transform: scaleY(1.1); }
+.barrier.jumped { background: linear-gradient(180deg,#27ae60,#1a7a3f); border-color: #145a2f; }
+.jump-count {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.4rem; font-weight: 800; color: var(--ink);
+  margin: 6px 0;
+}
+.jump-instruction {
+  font-size: .85rem; font-weight: 700; color: #555;
+}
+
+/* ── KARAOKE ── */
+.karaoke-box {
+  background: #1a1a2e;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 10px 0;
+  color: white;
+  text-align: center;
+}
+.karaoke-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 1rem; color: var(--gold2); margin-bottom: 8px;
+}
+.lyrics {
+  font-size: .88rem; line-height: 1.9; color: #ccc;
+  text-align: left; background: rgba(255,255,255,.05);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  max-height: 160px; overflow-y: auto;
+}
+.lyrics .cur { color: var(--gold2); font-weight: 900; font-size: 1rem; }
+.karaoke-btn {
+  background: linear-gradient(135deg,#8e44ad,#6c3483);
+  border: none; border-radius: 12px; padding: 10px 22px;
+  font-size: .95rem; font-weight: 800; color: white;
+  cursor: pointer; font-family: 'Nunito', sans-serif;
+  box-shadow: 0 4px 0 #4a235a; transition: all .2s;
+}
+.karaoke-btn:hover { transform: translateY(-2px); }
+.karaoke-btn.recording {
+  background: linear-gradient(135deg,#e74c3c,#c0392b);
+  box-shadow: 0 4px 0 #7b241c;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+.mic-feedback {
+  font-size: .82rem; font-weight: 700; color: #aaa; margin-top: 6px;
+}
+
+/* ── PROGRESS BAR ── */
+.map-progress {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px 6px;
+  background: var(--parchment2);
+  border-left: 4px solid var(--gold);
+  border-right: 4px solid var(--gold);
+  margin: 0;
+}
+.mp-label { font-size: .8rem; font-weight: 800; color: #7a5c1e; white-space: nowrap; }
+.mp-track { flex: 1; background: #d4b88a; border-radius: 50px; height: 10px; overflow: hidden; }
+.mp-fill  { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 50px; transition: width .6s ease; }
+.mp-stars { font-size: .95rem; }
+
+/* ── PRIZE MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+
+.prize-modal {
+  background: var(--parchment);
+  border: 4px solid var(--gold);
+  border-radius: 24px;
+  padding: 28px 24px 24px;
+  max-width: 440px; width: 100%;
+  text-align: center;
+  animation: modalPop .5s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(.6) rotate(-3deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.prize-trophy { font-size: 4.5rem; display: block; margin-bottom: 8px; }
+.prize-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: clamp(1.4rem,5vw,1.9rem);
+  color: var(--ink); margin-bottom: 6px;
+}
+.prize-sub {
+  font-size: .9rem; font-weight: 700; color: #7a5c1e;
+  margin-bottom: 20px;
+}
+
+.prize-options {
+  display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;
+}
+.prize-btn {
+  background: white;
+  border: 3px solid var(--gold);
+  border-radius: 16px; padding: 14px 18px;
+  cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 14px;
+  transition: all .2s;
+  box-shadow: 0 4px 0 var(--gold);
+  font-family: 'Nunito', sans-serif;
+}
+.prize-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 var(--gold);
+  background: #fff9e6;
+}
+.prize-btn.chosen {
+  border-color: var(--green);
+  background: #f0fff4;
+  box-shadow: 0 4px 0 #1a8a45;
+}
+.prize-emoji { font-size: 2.2rem; flex-shrink: 0; }
+.prize-name { font-size: 1rem; font-weight: 800; color: var(--ink); }
+.prize-price { font-size: .82rem; font-weight: 700; color: #888; }
+
+.prize-chosen-msg {
+  display: none; background: #d4ffd8; border-radius: 14px;
+  padding: 12px 16px; font-size: .95rem; font-weight: 800;
+  color: #1a5c30; border: 2px solid #27ae60;
+}
+.prize-chosen-msg.show { display: block; }
+
+/* confetti */
+.confetti-piece { position: fixed; pointer-events: none; z-index: 9999; animation: cfall 1.5s ease-in forwards; }
+@keyframes cfall { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(100vh) rotate(800deg);opacity:0} }
+
+/* locked overlay */
+.locked-msg {
+  display: none; font-size: .82rem; font-weight: 800; color: #e74c3c;
+  padding: 6px 0 0; text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div style="background:linear-gradient(135deg,#6a1b9a,#8e24aa);padding:8px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;">
+  <a href="home.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.3);border-radius:50px;padding:5px 14px;color:white;font-weight:800;font-size:.85rem;text-decoration:none;">← Главная</a>
+  <div style="flex:1;text-align:center;font-family:'Baloo 2',cursive;font-size:1rem;color:white;font-weight:700;">🗺️ Маршрутный квест</div>
+</div>
+
+
+<!-- Background stars -->
+<div class="stars" id="starsLayer"></div>
+
+<div class="scroll-wrap">
+
+  <!-- HEADER -->
+  <div class="map-header">
+    <div class="map-title">🗺️ Маршрутная карта</div>
+    <div class="map-subtitle">Квест Васи Боскиса</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="map-progress">
+    <div class="mp-label">Прогресс:</div>
+    <div class="mp-track"><div class="mp-fill" id="mpFill" style="width:0%"></div></div>
+    <div class="mp-stars" id="mpStars">0/3 ⭐</div>
+  </div>
+
+  <!-- MAP BODY -->
+  <div class="map-body">
+
+    <!-- ───── TASK 1 ───── -->
+    <div class="task-card" id="card1">
+      <div class="task-top" onclick="toggleTask(1)">
+        <div class="task-num n1">1</div>
+        <div class="task-info">
+          <div class="task-label">Задание 1</div>
+          <div class="task-name">Открой духовку и прочитай 📖</div>
+        </div>
+        <div class="task-badge">🔥</div>
+        <div class="task-check">✅</div>
+      </div>
+      <div class="task-body" id="body1">
+        <div class="task-desc">
+          1. Иди на кухню<br>
+          2. <strong>Открой духовку</strong> 🔥<br>
+          3. Найди книжку про Кротика и прочитай <strong>страницу 58</strong><br>
+          4. Нажми кнопку ниже и прочитай предложение вслух — система проверит!
+        </div>
+
+        <!-- Read aloud check -->
+        <div style="background:#f0f8ff;border-radius:14px;padding:12px;border:2px solid #aed6f1;margin-bottom:12px;">
+          <div style="font-size:.85rem;font-weight:800;color:#2471a3;margin-bottom:6px;">📢 Прочитай это предложение вслух:</div>
+          <div style="font-size:1.05rem;font-weight:800;color:#1a2744;background:white;border-radius:10px;padding:8px 12px;line-height:1.6;margin-bottom:10px;">
+            «Кротик очень обрадовался и побежал домой со своей находкой.»
+          </div>
+          <button class="action-btn btn-red" id="micBtn1" onclick="startMic1()">
+            🎤 Прочитать вслух
+          </button>
+          <div style="margin-top:8px;font-size:.82rem;font-weight:700;color:#888;" id="mic1status">Нажми и читай</div>
+          <div style="background:#d4ffd8;border-radius:10px;padding:6px 12px;font-size:.88rem;font-weight:800;color:#1a7a30;margin-top:6px;display:none;" id="mic1ok">✅ Отлично прочитал!</div>
+          <div style="background:#ffe0e0;border-radius:10px;padding:6px 12px;font-size:.88rem;font-weight:800;color:#cc2020;margin-top:6px;display:none;" id="mic1no">❌ Попробуй ещё раз — громче!</div>
+        </div>
+
+        <!-- hint -->
+        <div class="hint-box" id="hint1">
+          <div class="hint-title">🔑 Подсказка 1 открыта!</div>
+          <div class="hint-text">
+            Ты нашёл первую часть кода: <strong>🔴 «КРО»</strong><br>
+            Запомни или запиши! Осталось ещё 2 части.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-dots">
+      <div class="path-dot"></div><div class="path-dot"></div><div class="path-dot"></div>
+    </div>
+
+    <!-- ───── TASK 2 ───── -->
+    <div class="task-card locked" id="card2">
+      <div class="task-top" onclick="toggleTask(2)">
+        <div class="task-num n2">2</div>
+        <div class="task-info">
+          <div class="task-label">Задание 2</div>
+          <div class="task-name">Найди барьеры и прыгай! 🏃</div>
+        </div>
+        <div class="task-badge">🚧</div>
+        <div class="task-check">✅</div>
+      </div>
+      <div class="task-body" id="body2">
+        <div class="task-desc">
+          1. Найди <strong>красные барьеры</strong> 🚧<br>
+          2. Перепрыгни через каждый <strong>5 раз</strong><br>
+          3. После каждого прыжка нажимай на барьер ниже — отмечай прогресс!
+        </div>
+
+        <!-- Jump mini-game -->
+        <div class="jump-game">
+          <div class="jump-instruction">Нажимай на барьер каждый раз, как прыгнул!</div>
+          <div class="jump-count">Прыжков: <span id="jumpCount">0</span> / 5</div>
+          <div class="barriers">
+            <div class="barrier" id="b1" onclick="jump(1)">🏃</div>
+            <div class="barrier" id="b2" onclick="jump(2)">🏃</div>
+            <div class="barrier" id="b3" onclick="jump(3)">🏃</div>
+            <div class="barrier" id="b4" onclick="jump(4)">🏃</div>
+            <div class="barrier" id="b5" onclick="jump(5)">🏃</div>
+          </div>
+          <div style="font-size:.8rem;font-weight:700;color:#888;">
+            Нажми на красный барьер — он позеленеет ✅
+          </div>
+        </div>
+
+        <div class="hint-box" id="hint2">
+          <div class="hint-title">🔑 Подсказка 2 открыта!</div>
+          <div class="hint-text">
+            Вторая часть кода: <strong>🟠 «ТИК»</strong><br>
+            Молодец, ты прыгун! Осталась 1 подсказка.
+          </div>
+        </div>
+      </div>
+      <div class="locked-msg" id="lock2">🔒 Сначала выполни Задание 1!</div>
+    </div>
+
+    <div class="path-dots">
+      <div class="path-dot"></div><div class="path-dot"></div><div class="path-dot"></div>
+    </div>
+
+    <!-- ───── TASK 3 ───── */-->
+    <div class="task-card locked" id="card3">
+      <div class="task-top" onclick="toggleTask(3)">
+        <div class="task-num n3">3</div>
+        <div class="task-info">
+          <div class="task-label">Задание 3</div>
+          <div class="task-name">Скажи доброе пожелание 💛</div>
+        </div>
+        <div class="task-badge">💛</div>
+        <div class="task-check">✅</div>
+      </div>
+      <div class="task-body" id="body3">
+        <div class="task-desc">
+          Скажи вслух что-нибудь доброе и хорошее! 💛<br>
+          Например: пожелай кому-то счастья, скажи что любишь маму,<br>
+          или придумай своё пожелание!
+        </div>
+
+        <!-- WISH BOX -->
+        <div class="wish-box" id="wishBox">
+          <div class="wish-prompt">Нажми 🎤 и скажи своё доброе пожелание вслух!</div>
+          <div class="wish-examples">
+            <div class="wish-ex">💛 «Я желаю всем счастья и здоровья!»</div>
+            <div class="wish-ex">💙 «Я люблю свою маму и папу!»</div>
+            <div class="wish-ex">💚 «Пусть у всех всё будет хорошо!»</div>
+          </div>
+          <button class="action-btn btn-purple" id="wishBtn" onclick="startWish()">
+            🎤 Сказать пожелание
+          </button>
+          <div class="wish-heard" id="wishHeard" style="display:none;">
+            <div class="wish-heard-label">Я услышал:</div>
+            <div class="wish-heard-text" id="wishText"></div>
+          </div>
+          <div class="wish-ok" id="wishOk" style="display:none;">
+            ✨ Какое доброе сердце! Пожелание принято!
+          </div>
+          <div class="wish-no" id="wishNo" style="display:none;">
+            Не расслышал... Попробуй ещё раз, говори чуть громче! 🎤
+          </div>
+          <div class="wish-actions" id="wishActions" style="display:none;">
+            <button class="retry-btn" onclick="startWish()">🎤 Ещё раз</button>
+            <button class="skip-btn" onclick="confirmWish()">✅ Засчитать</button>
+          </div>
+          <div class="no-mic-note" id="wishNoMic" style="display:none;">
+            Микрофон недоступен —
+            <button onclick="confirmWish()" style="background:#8e44ad;color:white;border:none;border-radius:8px;padding:4px 12px;cursor:pointer;font-family:Nunito,sans-serif;font-weight:700;">
+              Я сказал! ✅
+            </button>
+          </div>
+        </div>
+
+        <div class="hint-box" id="hint3">
+          <div class="hint-title">💛 Ты открыл последний отсек!</div>
+          <div class="hint-text">
+            Вася, ты такой добрый и умный! 🌟<br>
+            Тебя ждёт настоящий приз — открывается прямо сейчас!
+          </div>
+        </div>
+      </div>
+      <div class="locked-msg" id="lock3">🔒 Сначала выполни Задание 2!</div>
+    </div>
+
+  </div>
+  <!-- /map-body -->
+
+</div>
+<!-- /scroll-wrap -->
+
+<!-- ───── PRIZE MODAL ───── -->
+<div class="modal-overlay" id="prizeModal">
+  <div class="prize-modal">
+    <span class="prize-trophy">🏆</span>
+    <div class="prize-title">Вася — ПОБЕДИТЕЛЬ!</div>
+    <div class="prize-sub">Ты выполнил все задания квеста! Теперь выбери свой приз:</div>
+
+    <div class="prize-options">
+      <button class="prize-btn" id="prize1" onclick="choosePrize(1)">
+        <span class="prize-emoji">🌸</span>
+        <div>
+          <div class="prize-name">Подарок из «Ароматного мира»</div>
+          <div class="prize-price">на 300 рублей — духи, уход, красота</div>
+        </div>
+      </button>
+      <button class="prize-btn" id="prize2" onclick="choosePrize(2)">
+        <span class="prize-emoji">📦</span>
+        <div>
+          <div class="prize-name">Подарок с Ozon</div>
+          <div class="prize-price">на 300 рублей — выбирай сам!</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="prize-chosen-msg" id="prizeChosenMsg"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+let done = { 1: false, 2: false, 3: false };
+let jumps = [false,false,false,false,false];
+let recognition = null;
+let recognizing = false;
+let mic1Done = false;
+let wishDone = false;
+
+// ── STARS ──
+(function(){
+  const layer = document.getElementById('starsLayer');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = 1 + Math.random() * 3;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}vw;top:${Math.random()*100}vh;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s;`;
+    layer.appendChild(s);
+  }
+})();
+
+// ── SPEECH ──
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  recognition = new SR();
+  recognition.lang = 'ru-RU';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+}
+initSpeech();
+
+// ── AUDIO ──
+let ctx = null;
+function audio() { if(!ctx) ctx=new(window.AudioContext||window.webkitAudioContext)(); return ctx; }
+function tone(f,d,t='sine',v=.28) {
+  try{ const c=audio(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);
+  o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d);}catch(e){}
+}
+function playOk()  { tone(523,.12);setTimeout(()=>tone(659,.12),100);setTimeout(()=>tone(784,.2),200); }
+function playNo()  { tone(300,.16,'sawtooth',.18);setTimeout(()=>tone(250,.2,'sawtooth',.18),130); }
+function playWin() { [523,587,659,784,880,1046].forEach((f,i)=>setTimeout(()=>tone(f,.16,'sine',.3),i*85)); }
+
+// ── CONFETTI ──
+function confetti(n=20){
+  const cols=['#FFD700','#FF6B6B','#6EC6F5','#5DBB63','#FF9F43','#A29BFE','#fff'];
+  for(let i=0;i<n;i++) setTimeout(()=>{
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;top:-20px;width:${7+Math.random()*9}px;height:${7+Math.random()*9}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),1600);
+  },i*55);
+}
+
+// ── TOGGLE TASK ──
+function toggleTask(n) {
+  // check lock
+  if (n===2 && !done[1]) { flashLock(2); return; }
+  if (n===3 && !done[2]) { flashLock(3); return; }
+
+  const body = document.getElementById('body'+n);
+  body.classList.toggle('open');
+}
+
+function flashLock(n) {
+  const msg = document.getElementById('lock'+n);
+  msg.style.display='block';
+  setTimeout(()=>msg.style.display='none',2000);
+}
+
+// ── UPDATE PROGRESS ──
+function updateProgress() {
+  const cnt = [done[1],done[2],done[3]].filter(Boolean).length;
+  document.getElementById('mpFill').style.width = (cnt/3*100)+'%';
+  document.getElementById('mpStars').textContent = cnt+'/3 ⭐';
+}
+
+function markDone(n) {
+  if (done[n]) return;
+  done[n] = true;
+  document.getElementById('card'+n).classList.remove('locked');
+  document.getElementById('card'+n).classList.add('done');
+  // unlock next
+  if (n<3) document.getElementById('card'+(n+1)).classList.remove('locked');
+  playOk(); confetti(16);
+  updateProgress();
+  if (done[1]&&done[2]&&done[3]) setTimeout(showPrize, 900);
+}
+
+// ── TASK 1: MIC READ ──
+function startMic1() {
+  if (!recognition) {
+    // no speech API — just let them tap confirm
+    document.getElementById('mic1status').textContent='Микрофон недоступен.';
+    showFallback1(); return;
+  }
+  const btn = document.getElementById('micBtn1');
+  btn.textContent='🔴 Говори!';
+  btn.style.background='linear-gradient(135deg,#e74c3c,#7b241c)';
+  document.getElementById('mic1status').textContent='Слушаю...';
+  document.getElementById('mic1ok').style.display='none';
+  document.getElementById('mic1no').style.display='none';
+
+  recognition.onresult = (e) => {
+    let t='';
+    for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) t+=e.results[i][0].transcript;
+    if (!t) return;
+    const norm = s=>s.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z ]/g,'');
+    const keys = ['кротик','обрадовался','побежал','домой','находкой'];
+    const heard = norm(t);
+    const hits  = keys.filter(k=>heard.includes(k)).length;
+    resetMicBtn1();
+    if (hits>=2) {
+      document.getElementById('mic1ok').style.display='block';
+      document.getElementById('mic1status').textContent='Принято! 🎉';
+      setTimeout(()=>{ document.getElementById('hint1').classList.add('show'); markDone(1); }, 500);
+    } else {
+      document.getElementById('mic1no').style.display='block';
+      document.getElementById('mic1status').textContent='Попробуй ещё раз';
+      playNo();
+    }
+  };
+  recognition.onerror = ()=>{ resetMicBtn1(); showFallback1(); };
+  recognition.onend   = ()=>resetMicBtn1();
+  try { recognition.start(); } catch(e){}
+}
+
+function resetMicBtn1() {
+  const btn=document.getElementById('micBtn1');
+  btn.textContent='🎤 Прочитать вслух';
+  btn.style.background='';
+}
+
+function showFallback1() {
+  // fallback — show confirm button
+  const btn=document.getElementById('micBtn1');
+  btn.textContent='✅ Я прочитал!';
+  btn.onclick=()=>{
+    document.getElementById('hint1').classList.add('show');
+    document.getElementById('mic1ok').style.display='block';
+    document.getElementById('mic1ok').textContent='✅ Задание засчитано!';
+    markDone(1);
+  };
+}
+
+// ── TASK 2: JUMP ──
+let jumpsDone = 0;
+function jump(n) {
+  if (jumps[n-1]) return;
+  jumps[n-1] = true;
+  jumpsDone++;
+  const el = document.getElementById('b'+n);
+  el.classList.add('jumped');
+  el.textContent = '✅';
+  el.onclick = null;
+  document.getElementById('jumpCount').textContent = jumpsDone;
+  tone(400+jumpsDone*60,.15,'sine',.25);
+  if (jumpsDone >= 5) {
+    setTimeout(()=>{
+      document.getElementById('hint2').classList.add('show');
+      markDone(2);
+    }, 400);
+  }
+}
+
+// ── TASK 3: KARAOKE ──
+
+// ── WISH / BLESSING TASK ──
+let wishRec = null;
+let wishDone = false;
+
+function startWish() {
+  const btn = document.getElementById('wishBtn');
+  document.getElementById('wishOk').style.display='none';
+  document.getElementById('wishNo').style.display='none';
+  document.getElementById('wishActions').style.display='none';
+  document.getElementById('wishHeard').style.display='none';
+  document.getElementById('wishNoMic').style.display='none';
+
+  if (!recognition) {
+    document.getElementById('wishNoMic').style.display='block';
+    return;
+  }
+
+  btn.textContent='🔴 Говори...';
+  btn.style.background='linear-gradient(135deg,#e74c3c,#7b241c)';
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (wishRec) { try{wishRec.stop();}catch(e){} }
+  wishRec = new SR();
+  wishRec.lang = 'ru-RU';
+  wishRec.continuous = false;
+  wishRec.interimResults = false;
+  wishRec.maxAlternatives = 3;
+
+  let heard = '';
+  wishRec.onresult = (e)=>{
+    for(let i=e.resultIndex;i<e.results.length;i++)
+      if(e.results[i].isFinal) heard+=e.results[i][0].transcript;
+  };
+  wishRec.onerror = ()=>{
+    resetWishBtn();
+    document.getElementById('wishNoMic').style.display='block';
+  };
+  wishRec.onend = ()=>{
+    resetWishBtn();
+    if (!heard) {
+      document.getElementById('wishNo').style.display='block';
+      document.getElementById('wishActions').style.display='flex';
+      return;
+    }
+    // show what was heard
+    document.getElementById('wishText').textContent = heard;
+    document.getElementById('wishHeard').style.display='block';
+    // any non-empty speech = good wish! Check for some warmth keywords OR just length
+    const norm = s=>s.toLowerCase().replace(/ё/g,'е');
+    const goodWords = ['люблю','желаю','счастья','здоровья','хорошо','добро','мама','папа','спасибо','радость','пусть','всем','всё','хороший','лучший','замечательный','отлично','буду','стараться'];
+    const h = norm(heard);
+    const hits = goodWords.filter(w=>h.includes(w)).length;
+    if (hits >= 1 || heard.length > 8) {
+      document.getElementById('wishOk').style.display='block';
+      playOk();
+      confetti(18);
+      setTimeout(()=>confirmWish(), 1000);
+    } else {
+      document.getElementById('wishNo').style.display='block';
+      document.getElementById('wishActions').style.display='flex';
+      playNo();
+    }
+  };
+  setTimeout(()=>{ try{wishRec.stop();}catch(e){} }, 8000);
+  wishRec.start();
+}
+
+function resetWishBtn() {
+  const btn = document.getElementById('wishBtn');
+  if (!btn) return;
+  btn.textContent='🎤 Сказать пожелание';
+  btn.style.background='';
+}
+
+function confirmWish() {
+  if (wishDone) return; wishDone = true;
+  document.getElementById('wishOk').style.display='block';
+  document.getElementById('wishOk').textContent='✨ Какое доброе сердце! Пожелание принято!';
+  document.getElementById('wishActions').style.display='none';
+  resetWishBtn();
+  document.getElementById('hint3').classList.add('show');
+  markDone(3);
+}
+
+// ── PRIZE ──
+function showPrize() {
+  playWin(); confetti(35);
+  document.getElementById('prizeModal').classList.add('show');
+}
+
+function choosePrize(n) {
+  const msgs = {
+    1: '🌸 Ты выбрал подарок из «Ароматного мира» на 300 ₽! Скажи маме — она поможет получить приз!',
+    2: '📦 Ты выбрал подарок с Ozon на 300 ₽! Скажи маме — вместе выберете что-нибудь классное!'
+  };
+  document.getElementById('prize1').classList.remove('chosen');
+  document.getElementById('prize2').classList.remove('chosen');
+  document.getElementById('prize'+n).classList.add('chosen');
+  const msg = document.getElementById('prizeChosenMsg');
+  msg.textContent = msgs[n];
+  msg.classList.add('show');
+  playOk(); confetti(25);
+}
+
+updateProgress();
+</script>
+</body>
+</html>
