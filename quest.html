@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Квест Васи 🗺️</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Baloo+2:wght@400;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#1a1a2e;min-height:100vh;}
+
+.top-nav{background:linear-gradient(135deg,#6a1b9a,#8e24aa);padding:10px 16px;display:flex;align-items:center;gap:10px;}
+.home-btn{background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.3);border-radius:50px;padding:6px 16px;color:white;font-weight:800;font-size:.85rem;text-decoration:none;}
+.nav-title{flex:1;text-align:center;font-family:'Baloo 2',cursive;font-size:1rem;color:white;font-weight:700;}
+
+.page{max-width:540px;margin:0 auto;padding:16px 14px 60px;}
+
+.map-card{background:#f5e6c8;border:4px solid #d4a017;border-radius:20px;overflow:hidden;}
+.map-head{padding:18px 20px 10px;text-align:center;border-bottom:2px dashed #d4a017;}
+.map-head h1{font-family:'Baloo 2',cursive;font-size:1.8rem;color:#1a1a2e;}
+.map-head p{font-size:.78rem;font-weight:800;color:#7a5c1e;letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+
+.prog-row{display:flex;align-items:center;gap:10px;padding:10px 18px;background:#ede0b5;border-bottom:2px dashed #d4a017;}
+.prog-lbl{font-size:.8rem;font-weight:800;color:#7a5c1e;}
+.prog-track{flex:1;background:#d4b88a;border-radius:50px;height:10px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#d4a017,#f0c040);border-radius:50px;transition:width .6s;}
+.prog-txt{font-size:.9rem;font-weight:900;color:#7a5c1e;}
+
+.map-body{padding:14px 14px 20px;}
+.dots{display:flex;flex-direction:column;align-items:center;gap:5px;padding:5px 0;}
+.dot{width:8px;height:8px;border-radius:50%;background:#d4a017;opacity:.5;}
+
+/* TASK */
+.task{background:white;border-radius:16px;border:3px solid #ddd;box-shadow:0 4px 0 #bbb;overflow:hidden;margin:5px 0;}
+.task.done{border-color:#27ae60;box-shadow:0 4px 0 #1a8a45;}
+.task.locked{opacity:.6;}
+
+.task-head{display:flex;align-items:center;gap:12px;padding:14px 14px;background:white;cursor:pointer;-webkit-tap-highlight-color:rgba(212,160,23,.2);touch-action:manipulation;user-select:none;border:none;width:100%;text-align:left;font-family:'Nunito',sans-serif;}
+.task.done .task-head{background:#f0fff4;}
+.task-num{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Baloo 2',cursive;font-size:1.2rem;font-weight:800;color:white;flex-shrink:0;}
+.n1{background:linear-gradient(135deg,#e74c3c,#c0392b);}
+.n2{background:linear-gradient(135deg,#e67e22,#d35400);}
+.n3{background:linear-gradient(135deg,#8e44ad,#6c3483);}
+.task-info{flex:1;min-width:0;}
+.task-lbl{font-size:.68rem;font-weight:800;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+.task-name{font-family:'Baloo 2',cursive;font-size:1rem;font-weight:800;color:#1a1a2e;line-height:1.25;}
+.task-icon{font-size:1.5rem;flex-shrink:0;}
+
+.task-body{display:none;padding:13px 14px 15px;border-top:2px dashed #eee;background:#fafafa;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.task-body.open{display:block;}
+.task-desc{font-size:.9rem;font-weight:700;color:#444;line-height:1.7;margin-bottom:12px;}
+
+.lock-msg{display:none;text-align:center;padding:5px 0 8px;font-size:.82rem;font-weight:800;color:#e74c3c;}
+
+/* BUTTONS */
+.btn{width:100%;border:none;border-radius:13px;padding:12px 16px;font-size:.97rem;font-weight:900;color:white;cursor:pointer;font-family:'Baloo 2',cursive;box-shadow:0 5px 0 rgba(0,0,0,.18);touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,box-shadow .1s;}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.18);}
+.btn-red{background:linear-gradient(135deg,#e74c3c,#c0392b);}
+.btn-orange{background:linear-gradient(135deg,#f39c12,#d35400);}
+.btn-purple{background:linear-gradient(135deg,#9b59b6,#6c3483);}
+.btn.mic-on{background:linear-gradient(135deg,#c0392b,#7b241c)!important;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+
+/* READ BOX */
+.read-box{background:#eef6ff;border:2px solid #aed6f1;border-radius:13px;padding:12px 13px;margin-bottom:11px;}
+.read-lbl{font-size:.78rem;font-weight:800;color:#2471a3;margin-bottom:5px;}
+.read-sent{font-size:1rem;font-weight:800;color:#1a1a2e;background:white;border-radius:9px;padding:8px 11px;line-height:1.6;margin-bottom:9px;}
+
+/* JUMP */
+.jump-box{background:#e8f4fd;border-radius:13px;padding:13px;margin-bottom:11px;text-align:center;}
+.jump-cnt{font-family:'Baloo 2',cursive;font-size:1.4rem;font-weight:800;color:#1a1a2e;margin:5px 0;}
+.barriers{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:9px 0;}
+.barrier{width:46px;height:46px;background:linear-gradient(180deg,#e74c3c,#922b21);border-radius:10px 10px 0 0;border-bottom:4px solid #7b241c;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.3rem;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .1s;}
+.barrier:active{transform:scale(.88);}
+.barrier.jumped{background:linear-gradient(180deg,#27ae60,#1a7a3f);border-color:#145a2f;}
+
+/* WISH */
+.wish-box{background:#f5f0ff;border:2px solid #ce93d8;border-radius:13px;padding:13px;margin-bottom:11px;}
+.wish-lbl{font-size:.83rem;font-weight:800;color:#6a1b9a;margin-bottom:7px;text-align:center;}
+.wish-exs{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.wish-ex{background:white;border-radius:9px;padding:6px 11px;font-size:.83rem;font-weight:700;color:#4a235a;border-left:3px solid #ce93d8;}
+.wish-heard{background:white;border-radius:9px;padding:6px 11px;margin-top:7px;border:2px solid #ce93d8;font-size:.88rem;font-weight:700;color:#333;display:none;}
+
+/* MSG */
+.msg{border-radius:9px;padding:6px 11px;font-size:.85rem;font-weight:800;margin-top:7px;display:none;}
+.msg.ok{background:#d4ffd8;color:#1a7a30;}
+.msg.no{background:#ffe0e0;color:#cc2020;}
+.msg.info{background:#fff9c4;color:#795548;}
+.msg.show{display:block;}
+
+.hint-box{display:none;background:linear-gradient(135deg,#fff9e6,#fff3cc);border:2px solid #d4a017;border-radius:13px;padding:11px 13px;margin-top:11px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+.hint-box.show{display:block;}
+@keyframes popIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+.hint-title{font-family:'Baloo 2',cursive;font-size:.82rem;color:#d4a017;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;}
+.hint-text{font-size:.9rem;font-weight:700;color:#5a3e00;line-height:1.55;}
+
+/* PRIZE MODAL */
+.modal{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
+.modal.show{display:flex;}
+.modal-box{background:#f5e6c8;border:4px solid #d4a017;border-radius:22px;padding:26px 20px 22px;max-width:400px;width:100%;text-align:center;animation:popIn .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.m-icon{font-size:3.8rem;display:block;margin-bottom:7px;}
+.m-title{font-family:'Baloo 2',cursive;font-size:1.6rem;color:#1a1a2e;margin-bottom:5px;}
+.m-sub{font-size:.88rem;font-weight:700;color:#7a5c1e;margin-bottom:16px;}
+.prize-list{display:flex;flex-direction:column;gap:9px;margin-bottom:14px;}
+.prize-btn{background:white;border:3px solid #d4a017;border-radius:15px;padding:13px 14px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:11px;box-shadow:0 4px 0 #d4a017;font-family:'Nunito',sans-serif;touch-action:manipulation;transition:transform .1s,box-shadow .1s;}
+.prize-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d4a017;}
+.prize-btn.chosen{border-color:#27ae60;background:#f0fff4;box-shadow:0 4px 0 #1a8a45;}
+.prize-emoji{font-size:2rem;flex-shrink:0;}
+.prize-name{font-size:.92rem;font-weight:800;color:#1a1a2e;}
+.prize-price{font-size:.78rem;font-weight:700;color:#888;}
+.prize-msg{display:none;background:#d4ffd8;border-radius:11px;padding:9px 13px;font-size:.88rem;font-weight:800;color:#1a5c30;border:2px solid #27ae60;}
+.prize-msg.show{display:block;}
+
+.cf{position:fixed;pointer-events:none;z-index:9999;animation:cfFall 1.4s ease-in forwards;}
+@keyframes cfFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <a href="home.html" class="home-btn">← Главная</a>
+  <div class="nav-title">🗺️ Маршрутный квест</div>
+</div>
+
+<div class="page">
+  <div class="map-card">
+    <div class="map-head">
+      <h1>🗺️ Маршрутная карта</h1>
+      <p>Квест Васи Боскиса</p>
+    </div>
+    <div class="prog-row">
+      <div class="prog-lbl">Прогресс:</div>
+      <div class="prog-track"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+      <div class="prog-txt" id="ps">0/3 ⭐</div>
+    </div>
+    <div class="map-body">
+
+      <!-- TASK 1 -->
+      <div class="task" id="t1">
+        <button class="task-head" id="th1" type="button">
+          <div class="task-num n1">1</div>
+          <div class="task-info"><div class="task-lbl">Задание 1</div><div class="task-name">Открой духовку и прочитай 📖</div></div>
+          <div class="task-icon" id="ti1">🔥</div>
+        </button>
+        <div class="task-body" id="tb1">
+          <div class="task-desc">1. Иди на кухню<br>2. <strong>Открой духовку</strong> 🔥<br>3. Найди книжку и прочитай <strong>страницу 58</strong><br>4. Нажми кнопку и прочитай предложение вслух!</div>
+          <div class="read-box">
+            <div class="read-lbl">📢 Прочитай вслух:</div>
+            <div class="read-sent">«Кротик очень обрадовался и побежал домой со своей находкой.»</div>
+            <button class="btn btn-red" id="mic1" type="button">🎤 Прочитать вслух</button>
+            <div class="msg" id="msg1"></div>
+          </div>
+          <div class="hint-box" id="h1">
+            <div class="hint-title">🔑 Подсказка 1 открыта!</div>
+            <div class="hint-text">Первая часть кода: <strong>🔴 «КРО»</strong><br>Запомни! Осталось 2 части.</div>
+          </div>
+        </div>
+        <div class="lock-msg" id="lm1"></div>
+      </div>
+
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <!-- TASK 2 -->
+      <div class="task locked" id="t2">
+        <button class="task-head" id="th2" type="button">
+          <div class="task-num n2">2</div>
+          <div class="task-info"><div class="task-lbl">Задание 2</div><div class="task-name">Найди барьеры и прыгай! 🏃</div></div>
+          <div class="task-icon" id="ti2">🚧</div>
+        </button>
+        <div class="task-body" id="tb2">
+          <div class="task-desc">1. Найди <strong>красные барьеры</strong> 🚧<br>2. Перепрыгни каждый <strong>5 раз</strong><br>3. После каждого прыжка нажимай на барьер!</div>
+          <div class="jump-box">
+            <div class="jump-cnt">Прыжков: <span id="jc">0</span> / 5</div>
+            <div class="barriers">
+              <div class="barrier" id="b1">🏃</div>
+              <div class="barrier" id="b2">🏃</div>
+              <div class="barrier" id="b3">🏃</div>
+              <div class="barrier" id="b4">🏃</div>
+              <div class="barrier" id="b5">🏃</div>
+            </div>
+            <div style="font-size:.78rem;font-weight:700;color:#666;">Нажми — и он позеленеет ✅</div>
+          </div>
+          <div class="hint-box" id="h2">
+            <div class="hint-title">🔑 Подсказка 2 открыта!</div>
+            <div class="hint-text">Вторая часть кода: <strong>🟠 «ТИК»</strong><br>Ты прыгун! Осталась 1 подсказка.</div>
+          </div>
+        </div>
+        <div class="lock-msg" id="lm2">🔒 Сначала выполни Задание 1!</div>
+      </div>
+
+      <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <!-- TASK 3 -->
+      <div class="task locked" id="t3">
+        <button class="task-head" id="th3" type="button">
+          <div class="task-num n3">3</div>
+          <div class="task-info"><div class="task-lbl">Задание 3</div><div class="task-name">Скажи доброе пожелание 💛</div></div>
+          <div class="task-icon" id="ti3">💛</div>
+        </button>
+        <div class="task-body" id="tb3">
+          <div class="task-desc">Скажи вслух что-нибудь доброе и хорошее! 💛<br>Пожелай счастья или скажи что любишь!</div>
+          <div class="wish-box">
+            <div class="wish-lbl">Например:</div>
+            <div class="wish-exs">
+              <div class="wish-ex">💛 «Я желаю всем счастья и здоровья!»</div>
+              <div class="wish-ex">💙 «Я люблю свою маму и папу!»</div>
+              <div class="wish-ex">💚 «Пусть у всех всё будет хорошо!»</div>
+            </div>
+            <button class="btn btn-purple" id="wishBtn" type="button">🎤 Сказать пожелание</button>
+            <div class="wish-heard" id="wHeard"></div>
+            <div class="msg" id="msgW"></div>
+          </div>
+          <div class="hint-box" id="h3">
+            <div class="hint-title">💛 Последний отсек открыт!</div>
+            <div class="hint-text">Вася, ты такой добрый! 🌟<br>Тебя ждёт настоящий приз!</div>
+          </div>
+        </div>
+        <div class="lock-msg" id="lm3">🔒 Сначала выполни Задание 2!</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PRIZE MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <span class="m-icon">🏆</span>
+    <div class="m-title">Вася — ПОБЕДИТЕЛЬ!</div>
+    <div class="m-sub">Ты выполнил все задания! Выбери приз:</div>
+    <div class="prize-list">
+      <button class="prize-btn" id="pb1" type="button" onclick="prize(1)">
+        <span class="prize-emoji">🌸</span>
+        <div><div class="prize-name">Подарок из «Ароматного мира»</div><div class="prize-price">на 300 рублей</div></div>
+      </button>
+      <button class="prize-btn" id="pb2" type="button" onclick="prize(2)">
+        <span class="prize-emoji">📦</span>
+        <div><div class="prize-name">Подарок с Ozon</div><div class="prize-price">на 300 рублей — выбирай сам!</div></div>
+      </button>
+    </div>
+    <div class="prize-msg" id="pm"></div>
+  </div>
+</div>
+
+<script>
+var done={1:false,2:false,3:false};
+var jDone=[false,false,false,false,false];
+var jCount=0;
+var wDone=false;
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var rec=null;
+
+// audio
+var actx=null;
+function beep(f,d,t,v){try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();var o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+function playOk(){beep(523,.12);setTimeout(function(){beep(659,.12);},110);setTimeout(function(){beep(784,.2);},220);}
+function playWin(){var ff=[523,587,659,784,880,1046];for(var i=0;i<ff.length;i++){(function(f,i){setTimeout(function(){beep(f,.16,'sine',.3);},i*85);})(ff[i],i);}}
+
+function confetti(){var cols=['#FFD700','#FF6B6B','#6EC6F5','#5DBB63','#FF9F43','#A29BFE'];for(var i=0;i<22;i++){(function(i){setTimeout(function(){var el=document.createElement('div');el.className='cf';el.style.cssText='left:'+Math.random()*100+'vw;top:-20px;width:'+(7+Math.random()*9)+'px;height:'+(7+Math.random()*9)+'px;background:'+cols[Math.floor(Math.random()*cols.length)]+';border-radius:'+(Math.random()>.5?'50%':'2px')+';';document.body.appendChild(el);setTimeout(function(){el.remove();},1600);},i*55);})(i);}}
+
+function updateProg(){
+  var n=(done[1]?1:0)+(done[2]?1:0)+(done[3]?1:0);
+  document.getElementById('pf').style.width=(n/3*100)+'%';
+  document.getElementById('ps').textContent=n+'/3 ⭐';
+}
+
+function markDone(n){
+  if(done[n])return;
+  done[n]=true;
+  document.getElementById('t'+n).classList.remove('locked');
+  document.getElementById('t'+n).classList.add('done');
+  document.getElementById('ti'+n).textContent='✅';
+  if(n<3)document.getElementById('t'+(n+1)).classList.remove('locked');
+  playOk();confetti();
+  updateProg();
+  if(done[1]&&done[2]&&done[3])setTimeout(showPrize,1000);
+}
+
+function openTask(n){
+  if(n===2&&!done[1]){flash(2);return;}
+  if(n===3&&!done[2]){flash(3);return;}
+  var b=document.getElementById('tb'+n);
+  b.classList.toggle('open');
+}
+
+function flash(n){
+  var el=document.getElementById('lm'+n);
+  el.style.display='block';
+  setTimeout(function(){el.style.display='none';},2000);
+}
+
+// TASK 1 — read aloud
+function startMic1(){
+  var btn=document.getElementById('mic1');
+  showMsg('msg1','','');
+  if(!SR){
+    btn.textContent='✅ Я прочитал!';
+    btn.onclick=function(){showMsg('msg1','ok','✅ Засчитано!');document.getElementById('h1').classList.add('show');markDone(1);btn.onclick=null;};
+    return;
+  }
+  btn.textContent='🔴 Говори...';
+  btn.classList.add('mic-on');
+  btn.onclick=null;
+  if(rec){try{rec.stop();}catch(e){}}
+  rec=new SR();rec.lang='ru-RU';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=5;
+  var heard='';
+  rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)heard+=e.results[i][0].transcript;};
+  rec.onerror=function(){reset1();};
+  rec.onend=function(){
+    reset1();
+    if(!heard){showMsg('msg1','no','❌ Не слышу. Попробуй ещё раз!');return;}
+    var norm=function(s){return s.toLowerCase().replace(/ё/g,'е').replace(/[^а-яa-z ]/g,'');};
+    var keys=['кротик','обрадовался','побежал','домой','находкой'];
+    var hits=keys.filter(function(k){return norm(heard).indexOf(k)>=0;}).length;
+    if(hits>=2){showMsg('msg1','ok','✅ Отлично прочитал!');document.getElementById('h1').classList.add('show');markDone(1);}
+    else{showMsg('msg1','no','❌ Не расслышал — читай громче!');btn.onclick=startMic1;}
+  };
+  try{rec.start();}catch(e){reset1();}
+}
+function reset1(){var b=document.getElementById('mic1');b.textContent='🎤 Прочитать вслух';b.classList.remove('mic-on');b.onclick=startMic1;}
+
+// TASK 2 — jump
+function doJump(n){
+  if(jDone[n-1])return;
+  jDone[n-1]=true;jCount++;
+  var el=document.getElementById('b'+n);el.classList.add('jumped');el.textContent='✅';
+  document.getElementById('jc').textContent=jCount;
+  beep(400+jCount*60,.12,'sine',.2);
+  if(jCount>=5)setTimeout(function(){document.getElementById('h2').classList.add('show');markDone(2);},300);
+}
+
+// TASK 3 — wish
+function startWish(){
+  var btn=document.getElementById('wishBtn');
+  showMsg('msgW','','');
+  document.getElementById('wHeard').style.display='none';
+  if(!SR){btn.textContent='✅ Я сказал!';btn.onclick=confirmWish;return;}
+  btn.textContent='🔴 Говори...';btn.classList.add('mic-on');btn.onclick=null;
+  if(rec){try{rec.stop();}catch(e){}}
+  rec=new SR();rec.lang='ru-RU';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=3;
+  var heard='';
+  rec.onresult=function(e){for(var i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)heard+=e.results[i][0].transcript;};
+  rec.onerror=function(){resetWish();btn.textContent='✅ Я сказал!';btn.onclick=confirmWish;};
+  rec.onend=function(){
+    resetWish();
+    if(!heard){showMsg('msgW','no','❌ Не слышу. Нажми ✅ если сказал!');btn.textContent='✅ Засчитать';btn.onclick=confirmWish;return;}
+    var wh=document.getElementById('wHeard');wh.textContent='Я слышу: «'+heard+'»';wh.style.display='block';
+    var good=['люблю','желаю','счастья','здоровья','хорошо','мама','папа','спасибо','пусть','всем','радость','добро','буду','стараться'];
+    var h=heard.toLowerCase().replace(/ё/g,'е');
+    var hits=good.filter(function(w){return h.indexOf(w)>=0;}).length;
+    if(hits>=1||heard.length>8){showMsg('msgW','ok','✨ Какое доброе сердце! Пожелание принято!');playOk();confetti();setTimeout(confirmWish,900);}
+    else{showMsg('msgW','no','❌ Скажи что-нибудь доброе ещё раз!');btn.textContent='🎤 Ещё раз';btn.onclick=startWish;}
+  };
+  setTimeout(function(){try{rec.stop();}catch(e){};},8000);
+  try{rec.start();}catch(e){resetWish();}
+}
+function resetWish(){var b=document.getElementById('wishBtn');b.textContent='🎤 Сказать пожелание';b.classList.remove('mic-on');b.onclick=startWish;}
+function confirmWish(){if(wDone)return;wDone=true;document.getElementById('h3').classList.add('show');document.getElementById('wishBtn').textContent='💛 Принято!';document.getElementById('wishBtn').onclick=null;markDone(3);}
+
+function showMsg(id,type,text){var el=document.getElementById(id);el.className='msg'+(type?' '+type+' show':'');el.textContent=text;}
+
+function showPrize(){playWin();confetti();confetti();document.getElementById('modal').classList.add('show');}
+
+function prize(n){
+  document.getElementById('pb1').classList.remove('chosen');
+  document.getElementById('pb2').classList.remove('chosen');
+  document.getElementById('pb'+n).classList.add('chosen');
+  var msgs={1:'🌸 Ты выбрал «Ароматный мир» на 300 ₽! Скажи маме!',2:'📦 Ты выбрал Ozon на 300 ₽! Вместе с мамой выберете!'};
+  var m=document.getElementById('pm');m.textContent=msgs[n];m.classList.add('show');
+  playOk();confetti();
+}
+
+// ── ATTACH EVENTS — самый надёжный способ для мобильного ──
+function attach(btnId, taskNum){
+  var el=document.getElementById(btnId);
+  el.addEventListener('click',function(){openTask(taskNum);});
+}
+attach('th1',1);
+attach('th2',2);
+attach('th3',3);
+
+document.getElementById('mic1').addEventListener('click',startMic1);
+document.getElementById('wishBtn').addEventListener('click',startWish);
+
+for(var bi=1;bi<=5;bi++){
+  (function(n){
+    document.getElementById('b'+n).addEventListener('click',function(){doJump(n);});
+  })(bi);
+}
+
+updateProg();
+</script>
+</body>
+</html>
