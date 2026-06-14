@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Игра Васи 🌟</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Baloo+2:wght@400;700;800&display=swap');
+
+:root {
+  --sky: #6EC6F5; --grass: #5DBB63; --sun: #FFD93D;
+  --berry: #FF6B6B; --cloud: #fff; --bark: #8B5E3C;
+  --night: #1A2744; --card: #FFFDF0; --correct: #43C462;
+  --wrong: #FF5252; --gold: #FFD700; --purple: #A29BFE;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(180deg, var(--sky) 0%, #B8E8FF 55%, #D4F5D4 100%);
+  min-height: 100vh; overflow-x: hidden;
+}
+
+/* CLOUDS */
+.cloud { position:fixed; background:white; border-radius:50px; opacity:.8; animation:floatCloud linear infinite; pointer-events:none; }
+.cloud::before,.cloud::after { content:''; position:absolute; background:white; border-radius:50%; }
+.cloud-1{width:120px;height:40px;top:6%;animation-duration:38s;}
+.cloud-1::before{width:60px;height:60px;top:-30px;left:15px;}
+.cloud-1::after{width:45px;height:45px;top:-20px;left:50px;}
+.cloud-2{width:80px;height:28px;top:16%;animation-duration:50s;animation-delay:-18s;}
+.cloud-2::before{width:40px;height:40px;top:-20px;left:10px;}
+.cloud-2::after{width:30px;height:30px;top:-14px;left:35px;}
+@keyframes floatCloud{from{left:-200px}to{left:110vw}}
+
+/* TABS */
+.tabs { display:flex; gap:0; background:rgba(0,0,0,0.15); border-radius:0; }
+.tab-btn {
+  flex:1; padding:12px 8px; border:none; background:transparent;
+  color:white; font-family:'Baloo 2',cursive; font-size:1rem; font-weight:700;
+  cursor:pointer; transition:all .2s; opacity:.7; border-bottom:3px solid transparent;
+}
+.tab-btn.active { opacity:1; border-bottom:3px solid var(--sun); background:rgba(255,255,255,0.15); }
+
+/* SCREENS */
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* ===== GAME SCREEN ===== */
+#gameScreen { max-width:680px; margin:0 auto; padding:12px 14px 40px; }
+
+.header-box {
+  text-align:center; padding:14px 16px 10px;
+  background:rgba(255,255,255,0.25); border-bottom:2px solid rgba(255,255,255,0.4);
+}
+.title-box {
+  display:inline-block; background:var(--sun); border-radius:20px;
+  padding:8px 24px 10px; box-shadow:0 5px 0 #C8A800;
+}
+h1 { font-family:'Baloo 2',cursive; font-size:clamp(1.4rem,4vw,2rem); color:var(--night); }
+h1 .name { color:var(--berry); }
+
+/* SCORE ROW */
+.score-row {
+  display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px;
+}
+.pill {
+  background:white; border-radius:50px; padding:5px 14px;
+  font-weight:900; font-size:.95rem; box-shadow:0 3px 0 #ddd; color:var(--night);
+  display:flex; align-items:center; gap:5px;
+}
+.pill.green { background:var(--grass); color:white; box-shadow:0 3px 0 #3A8A3F; }
+.pill.gold { background:var(--gold); color:var(--night); box-shadow:0 3px 0 #C8A800; }
+
+/* PROGRESS */
+.progress-track { background:rgba(255,255,255,.4); border-radius:50px; height:10px; margin:10px 14px 0; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--grass),var(--sun)); border-radius:50px; transition:width .5s; }
+
+/* CHARACTER */
+.char-wrap { display:flex; justify-content:center; margin:10px 0 4px; }
+.character { font-size:3.5rem; animation:bounce 2s ease-in-out infinite; filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)); }
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.character.celebrate{animation:celebrate .6s ease-in-out!important;}
+@keyframes celebrate{0%{transform:scale(1) rotate(0)}25%{transform:scale(1.4) rotate(-15deg)}50%{transform:scale(1.4) rotate(15deg)}100%{transform:scale(1) rotate(0)}}
+.character.sad{animation:shake .5s ease-in-out!important;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+
+/* BUBBLE */
+.bubble {
+  background:white; border-radius:20px; padding:12px 18px;
+  margin:0 0 12px; box-shadow:0 4px 0 #d0d0d0;
+  font-size:clamp(.9rem,2.8vw,1.05rem); line-height:1.6;
+  color:#333; text-align:center; position:relative;
+}
+.bubble::before {
+  content:''; position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+  border-left:12px solid transparent; border-right:12px solid transparent; border-bottom:16px solid white;
+}
+
+/* TASK CARD */
+.task-card {
+  background:var(--card); border-radius:22px; padding:18px 18px 20px;
+  box-shadow:0 6px 0 #E8D98A,0 10px 24px rgba(0,0,0,.1);
+  border:3px solid #FFE169; margin-bottom:12px;
+}
+.task-badge {
+  display:inline-block; background:var(--bark); color:white;
+  border-radius:50px; padding:3px 12px; font-size:.78rem; font-weight:700; margin-bottom:8px;
+}
+.task-emoji { font-size:2.4rem; display:block; text-align:center; margin-bottom:8px; }
+.sentence-parts {
+  display:flex; flex-wrap:wrap; align-items:center; gap:5px;
+  font-size:clamp(1rem,3vw,1.2rem); font-weight:700; color:var(--night); line-height:2; margin-bottom:10px;
+}
+.blank-slot {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:90px; padding:4px 10px; background:#EEF6FF;
+  border:3px dashed var(--sky); border-radius:12px;
+  font-size:clamp(.95rem,2.7vw,1.1rem); font-weight:900; color:#1A5E8A; transition:all .3s;
+}
+.blank-slot.filled { background:#D4F5D4; border:3px solid var(--correct); color:var(--correct); animation:pop .3s ease; }
+.blank-slot.wrong-slot { background:#FFE8E8; border:3px solid var(--wrong); color:var(--wrong); }
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* OPTIONS */
+.options { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:12px; }
+.opt-btn {
+  background:white; border:3px solid var(--sky); border-radius:14px;
+  padding:9px 20px; font-size:clamp(.95rem,2.8vw,1.1rem); font-weight:800;
+  color:var(--night); cursor:pointer; transition:all .18s;
+  box-shadow:0 4px 0 #A8DCFF; font-family:'Nunito',sans-serif; min-width:90px;
+}
+.opt-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 7px 0 #A8DCFF;background:#EEF6FF;}
+.opt-btn.selected-opt { background:var(--sun); border-color:#C8A800; box-shadow:0 4px 0 #C8A800; transform:scale(1.05); }
+.opt-btn.correct-opt { background:var(--correct); border-color:#2A9A40; color:white; box-shadow:0 4px 0 #1A7A30; }
+.opt-btn.wrong-opt { background:var(--wrong); border-color:#CC2020; color:white; box-shadow:0 4px 0 #AA1010; }
+.opt-btn:disabled{cursor:default;}
+
+/* PICTURE CARDS */
+.picture-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+.picture-card {
+  background:white; border-radius:16px; padding:14px 8px 10px;
+  text-align:center; cursor:pointer; border:3px solid #ddd;
+  box-shadow:0 4px 0 #ccc; transition:all .2s;
+}
+.picture-card:hover:not(.disabled){transform:translateY(-4px);border-color:var(--sky);box-shadow:0 8px 0 #A8DCFF;}
+.pic-emoji{font-size:2.8rem;display:block;margin-bottom:5px;}
+.pic-label{font-size:.82rem;font-weight:700;color:#555;line-height:1.3;}
+.picture-card.correct-card{border-color:var(--correct);background:#ECFFE8;box-shadow:0 4px 0 #2A9A40;}
+.picture-card.wrong-card{border-color:var(--wrong);background:#FFE8E8;box-shadow:0 4px 0 #CC2020;}
+.picture-card.selected-card{border-color:var(--sun);background:#FFF8D0;box-shadow:0 4px 0 #C8A800;}
+.picture-card.disabled{cursor:default;}
+
+/* READ ALOUD BOX */
+.read-box {
+  display:none; background:#EEF6FF; border:3px solid var(--sky);
+  border-radius:18px; padding:14px 16px; margin-top:12px; text-align:center;
+  animation:fadeIn .3s ease;
+}
+.read-box.show{display:block;}
+.read-word {
+  font-family:'Baloo 2',cursive; font-size:clamp(1.5rem,5vw,2rem);
+  color:var(--night); font-weight:800; display:block; margin:6px 0 10px;
+  letter-spacing:.03em;
+}
+.read-instruction { font-size:.9rem; color:#555; font-weight:700; margin-bottom:10px; }
+.speaker-btn {
+  background:var(--sky); border:none; border-radius:14px; padding:10px 20px;
+  font-size:1rem; font-weight:800; color:white; cursor:pointer;
+  box-shadow:0 4px 0 #4AA8D8; font-family:'Nunito',sans-serif;
+  transition:all .2s; margin-bottom:8px;
+}
+.speaker-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #4AA8D8;}
+.confirm-read-btn {
+  display:none; width:100%; background:var(--correct); border:none;
+  border-radius:14px; padding:12px 20px; font-size:1.05rem; font-weight:900;
+  color:white; cursor:pointer; box-shadow:0 5px 0 #1A7A30;
+  font-family:'Baloo 2',cursive; transition:all .2s; margin-top:4px;
+}
+.confirm-read-btn.show{display:block;}
+.confirm-read-btn:hover{transform:translateY(-2px);box-shadow:0 7px 0 #1A7A30;}
+
+/* FEEDBACK */
+.feedback {
+  text-align:center; font-size:1rem; font-weight:800; padding:9px 14px;
+  border-radius:12px; margin-top:10px; display:none; animation:fadeIn .3s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.feedback.correct{background:#D4FFD8;color:#1A7A30;}
+.feedback.wrong{background:#FFE0E0;color:#CC2020;}
+
+/* HINT */
+.hint-wrap{margin-top:8px;text-align:center;}
+.hint-btn{background:none;border:2px dashed #aaa;border-radius:10px;padding:5px 16px;color:#888;font-size:.85rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .2s;}
+.hint-btn:hover{border-color:var(--bark);color:var(--bark);}
+.hint-text{display:none;background:#FFF9E0;border:2px solid var(--sun);border-radius:10px;padding:7px 12px;font-size:.85rem;color:#7A5E00;margin-top:6px;animation:fadeIn .3s ease;}
+
+/* NEXT BTN */
+.next-btn {
+  width:100%; background:var(--berry); border:none; border-radius:16px;
+  padding:13px 20px; font-size:1.1rem; font-weight:900; color:white;
+  cursor:pointer; box-shadow:0 5px 0 #C83030; font-family:'Baloo 2',cursive;
+  display:none; margin-top:12px; transition:all .2s;
+}
+.next-btn:hover{transform:translateY(-3px);box-shadow:0 8px 0 #C83030;}
+
+/* WIN SCREEN */
+.win-inner{text-align:center;padding:30px 20px;animation:fadeIn .5s ease;}
+.win-emoji{font-size:5rem;}
+.win-inner h2{font-family:'Baloo 2',cursive;font-size:1.9rem;color:var(--night);margin:12px 0 6px;}
+.win-stars{font-size:2.2rem;letter-spacing:4px;}
+.restart-btn{background:var(--grass);border:none;border-radius:16px;padding:13px 34px;font-size:1.1rem;font-weight:900;color:white;cursor:pointer;box-shadow:0 5px 0 #3A8A3F;margin-top:18px;font-family:'Baloo 2',cursive;transition:all .2s;}
+.restart-btn:hover{transform:translateY(-3px);}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;pointer-events:none;z-index:9999;animation:confettiFall 1.4s ease-in forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(100vh) rotate(720deg) scale(.3);opacity:0}}
+
+/* ===== REWARDS SCREEN ===== */
+#rewardsScreen { max-width:680px; margin:0 auto; padding:16px 14px 40px; }
+
+.rewards-header {
+  text-align:center; margin-bottom:16px;
+}
+.rewards-header h2{font-family:'Baloo 2',cursive;font-size:1.7rem;color:var(--night);}
+.total-points {
+  background:var(--gold); border-radius:20px; padding:12px 24px;
+  display:inline-block; margin:8px auto; box-shadow:0 5px 0 #C8A800;
+  font-family:'Baloo 2',cursive; font-size:1.5rem; font-weight:800; color:var(--night);
+}
+
+/* REWARD GOALS */
+.reward-goals { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+.reward-goal {
+  background:white; border-radius:18px; padding:14px 16px;
+  box-shadow:0 4px 0 #ddd; border:3px solid #eee; position:relative; overflow:hidden;
+}
+.reward-goal.unlocked { border-color:var(--correct); }
+.rg-top { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.rg-emoji { font-size:2.4rem; }
+.rg-info { flex:1; }
+.rg-name { font-family:'Baloo 2',cursive; font-size:1.1rem; font-weight:800; color:var(--night); }
+.rg-need { font-size:.85rem; color:#888; font-weight:700; }
+.rg-bar-wrap { background:#f0f0f0; border-radius:50px; height:14px; overflow:hidden; }
+.rg-bar { height:100%; border-radius:50px; transition:width .6s ease; }
+.rg-bar.cinema { background:linear-gradient(90deg,#FF6B6B,#FF9F43); }
+.rg-bar.ice { background:linear-gradient(90deg,#A29BFE,#6EC6F5); }
+.rg-bar.shop { background:linear-gradient(90deg,#5DBB63,#FFD93D); }
+.rg-unlock-label {
+  position:absolute; right:14px; top:14px; background:var(--correct); color:white;
+  border-radius:50px; padding:3px 12px; font-size:.8rem; font-weight:800;
+}
+
+/* BEHAVIOR PANEL */
+.behavior-panel {
+  background:white; border-radius:18px; padding:16px;
+  box-shadow:0 4px 0 #ddd; margin-bottom:16px;
+}
+.behavior-panel h3 {
+  font-family:'Baloo 2',cursive; font-size:1.15rem; color:var(--night);
+  margin-bottom:12px; text-align:center;
+}
+.behavior-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.beh-btn {
+  border:none; border-radius:14px; padding:10px 8px; font-size:.85rem;
+  font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif;
+  transition:all .2s; text-align:center; line-height:1.4;
+}
+.beh-btn:hover{transform:translateY(-2px);}
+.beh-btn.plus { background:#D4FFD8; color:#1A7A30; box-shadow:0 3px 0 #A8E4B0; }
+.beh-btn.minus { background:#FFE0E0; color:#CC2020; box-shadow:0 3px 0 #FFAAAA; }
+.beh-btn .beh-pts { display:block; font-size:1.1rem; font-weight:900; }
+
+/* PARENT PIN */
+.parent-section { margin-bottom:16px; }
+.pin-box {
+  background:rgba(255,255,255,.5); border-radius:16px; padding:14px 16px;
+  text-align:center; border:2px dashed #aaa;
+}
+.pin-box p { font-size:.9rem; color:#666; font-weight:700; margin-bottom:8px; }
+.pin-input {
+  border:3px solid var(--sky); border-radius:12px; padding:8px 16px;
+  font-size:1.1rem; font-family:'Nunito',sans-serif; font-weight:800;
+  text-align:center; width:140px; outline:none; color:var(--night);
+}
+.pin-btn {
+  background:var(--sky); border:none; border-radius:12px; padding:9px 18px;
+  font-size:.95rem; font-weight:800; color:white; cursor:pointer;
+  font-family:'Nunito',sans-serif; margin-left:8px; box-shadow:0 3px 0 #4AA8D8;
+  transition:all .2s;
+}
+.pin-btn:hover{transform:translateY(-2px);}
+.parent-unlocked { display:none; }
+.parent-unlocked.show { display:block; animation:fadeIn .3s ease; }
+
+/* HISTORY LOG */
+.history-panel {
+  background:white; border-radius:18px; padding:14px 16px;
+  box-shadow:0 4px 0 #ddd; margin-bottom:16px; max-height:220px; overflow-y:auto;
+}
+.history-panel h3{font-family:'Baloo 2',cursive;font-size:1.1rem;color:var(--night);margin-bottom:8px;}
+.history-item {
+  display:flex; align-items:center; gap:8px; padding:6px 0;
+  border-bottom:1px solid #f0f0f0; font-size:.88rem; font-weight:700;
+}
+.history-item:last-child{border-bottom:none;}
+.history-item .hi-pts { font-weight:900; min-width:50px; }
+.history-item .hi-pts.pos { color:var(--correct); }
+.history-item .hi-pts.neg { color:var(--wrong); }
+.history-item .hi-time { color:#aaa; font-size:.78rem; margin-left:auto; }
+
+/* REMINDER SCREEN */
+#remindScreen { max-width:680px; margin:0 auto; padding:16px 14px 40px; }
+.remind-card {
+  background:white; border-radius:18px; padding:16px;
+  box-shadow:0 4px 0 #ddd; margin-bottom:12px; text-align:center;
+}
+.remind-card h3{font-family:'Baloo 2',cursive;font-size:1.2rem;color:var(--night);margin-bottom:10px;}
+.remind-item {
+  display:flex; align-items:center; gap:10px; padding:9px 12px;
+  background:#F8F8F8; border-radius:12px; margin-bottom:8px; text-align:left;
+}
+.remind-item .ri-emoji{font-size:1.8rem;}
+.remind-item .ri-text{font-size:.92rem;font-weight:700;color:#333;line-height:1.4;}
+.ri-pts{margin-left:auto;background:var(--sun);border-radius:50px;padding:2px 10px;font-size:.8rem;font-weight:900;color:var(--night);white-space:nowrap;}
+
+/* BONUS BANNER */
+.bonus-banner {
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  background:linear-gradient(135deg,#FFD700,#FF9F43);
+  padding:16px 20px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.2);
+  transform:translateY(-100%); transition:transform .4s ease;
+  font-family:'Baloo 2',cursive; font-size:1.2rem; font-weight:800; color:var(--night);
+}
+.bonus-banner.show{transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+
+<!-- BONUS BANNER -->
+<div class="bonus-banner" id="bonusBanner">🎉 +5 баллов! Молодец, Вася!</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('game')">🎮 Игра</button>
+  <button class="tab-btn" onclick="showTab('rewards')">🏆 Копилка</button>
+  <button class="tab-btn" onclick="showTab('remind')">📋 Правила</button>
+</div>
+
+<!-- ===================== GAME SCREEN ===================== -->
+<div id="gameScreen" class="screen active">
+  <div class="header-box">
+    <div class="title-box">
+      <h1>Привет, <span class="name">Вася!</span> 🌟</h1>
+    </div>
+    <div class="score-row">
+      <div class="pill gold">⭐ <span id="starCount">0</span> баллов</div>
+      <div class="pill green">Задание <span id="taskNum">1</span>/<span id="taskTotal">12</span></div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="gameScreen2" style="max-width:680px;margin:0 auto;padding:10px 14px 30px;">
+    <div class="char-wrap"><div class="character" id="character">🦊</div></div>
+    <div class="bubble" id="bubble">Привет, Вася! Я — лисёнок Рыжик. Поехали!</div>
+
+    <div id="gameArea">
+      <div class="task-card" id="taskCard"></div>
+
+      <!-- READ ALOUD BOX -->
+      <div class="read-box" id="readBox">
+        <div class="read-instruction">📢 Прочитай вслух это слово:</div>
+        <span class="read-word" id="readWord"></span>
+        <br>
+        <button class="speaker-btn" onclick="speakWord()">🔊 Послушать</button>
+        <br>
+        <button class="confirm-read-btn" id="confirmReadBtn" onclick="confirmRead()">
+          ✅ Я прочитал!
+        </button>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <div class="hint-wrap" id="hintWrap">
+        <button class="hint-btn" onclick="showHint()">💡 Подсказка</button>
+        <div class="hint-text" id="hintText"></div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextTask()">Дальше! →</button>
+    </div>
+
+    <!-- WIN -->
+    <div class="screen" id="winScreen">
+      <div class="win-inner">
+        <div class="win-emoji">🏆</div>
+        <h2>Вася — молодец!</h2>
+        <p style="font-size:1rem;color:#555;font-weight:700;">Все задания выполнены!</p>
+        <div class="win-stars" id="winStars"></div>
+        <div style="margin-top:12px;font-size:1rem;font-weight:800;color:var(--night)" id="winMsg"></div>
+        <button class="restart-btn" onclick="restart()">Играть снова! 🎉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== REWARDS SCREEN ===================== -->
+<div id="rewardsScreen" class="screen">
+  <div class="rewards-header">
+    <h2>🏆 Копилка Васи</h2>
+    <div class="total-points">⭐ <span id="totalPtsDisplay">0</span> баллов</div>
+  </div>
+
+  <div class="reward-goals" id="rewardGoals">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- Parent section -->
+  <div class="parent-section">
+    <div class="pin-box">
+      <p>👨‍👩‍👦 Для мамы и папы — введите пароль:</p>
+      <input class="pin-input" type="password" id="pinInput" placeholder="----" maxlength="4">
+      <button class="pin-btn" onclick="checkPin()">Войти</button>
+    </div>
+
+    <div class="parent-unlocked" id="parentPanel">
+      <div class="behavior-panel">
+        <h3>➕ Хорошие поступки</h3>
+        <div class="behavior-grid" id="goodGrid"></div>
+      </div>
+      <div class="behavior-panel">
+        <h3>➖ Штрафы</h3>
+        <div class="behavior-grid" id="badGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-panel">
+    <h3>📜 История баллов</h3>
+    <div id="historyList"><div style="color:#aaa;font-size:.85rem;text-align:center;">Пока пусто</div></div>
+  </div>
+</div>
+
+<!-- ===================== REMIND SCREEN ===================== -->
+<div id="remindScreen" class="screen">
+  <div class="remind-card">
+    <h3>🌟 За что Вася получает баллы</h3>
+    <div class="remind-item"><span class="ri-emoji">📖</span><span class="ri-text">Сделал логопедическое задание</span><span class="ri-pts">+5</span></div>
+    <div class="remind-item"><span class="ri-emoji">🎮</span><span class="ri-text">Прошёл уровень в игре</span><span class="ri-pts">+3</span></div>
+    <div class="remind-item"><span class="ri-emoji">🧹</span><span class="ri-text">Убрал за собой</span><span class="ri-pts">+2</span></div>
+    <div class="remind-item"><span class="ri-emoji">🍽️</span><span class="ri-text">Поел сам, без напоминания</span><span class="ri-pts">+2</span></div>
+    <div class="remind-item"><span class="ri-emoji">😴</span><span class="ri-text">Лёг спать вовремя</span><span class="ri-pts">+2</span></div>
+    <div class="remind-item"><span class="ri-emoji">📚</span><span class="ri-text">Почитал книгу</span><span class="ri-pts">+3</span></div>
+    <div class="remind-item"><span class="ri-emoji">🗣️</span><span class="ri-text">Говорил красиво и правильно</span><span class="ri-pts">+3</span></div>
+    <div class="remind-item"><span class="ri-emoji">🤝</span><span class="ri-text">Был вежливым</span><span class="ri-pts">+2</span></div>
+  </div>
+  <div class="remind-card">
+    <h3>⚡ Штрафы</h3>
+    <div class="remind-item"><span class="ri-emoji">😤</span><span class="ri-text">Грубил маме/папе</span><span class="ri-pts" style="background:#FFE0E0;color:var(--wrong);">-3</span></div>
+    <div class="remind-item"><span class="ri-emoji">📵</span><span class="ri-text">Не отложил телефон когда попросили</span><span class="ri-pts" style="background:#FFE0E0;color:var(--wrong);">-2</span></div>
+    <div class="remind-item"><span class="ri-emoji">🙅</span><span class="ri-text">Отказался делать задание</span><span class="ri-pts" style="background:#FFE0E0;color:var(--wrong);">-3</span></div>
+    <div class="remind-item"><span class="ri-emoji">🎬</span><span class="ri-text">Бонус: кино в двойном размере — если неделя без штрафов!</span><span class="ri-pts" style="background:#D4FFD8;color:var(--correct);">x2</span></div>
+  </div>
+  <div class="remind-card" style="background:linear-gradient(135deg,#FFF8D0,#FFFDF0);">
+    <h3>🎯 Цели Васи</h3>
+    <div class="remind-item"><span class="ri-emoji">🎬</span><span class="ri-text">Кино</span><span class="ri-pts" style="background:#FFE0E0;color:var(--berry);">20 ⭐</span></div>
+    <div class="remind-item"><span class="ri-emoji">🍦</span><span class="ri-text">Мороженое</span><span class="ri-pts" style="background:#EEF6FF;color:#1A5E8A;">10 ⭐</span></div>
+    <div class="remind-item"><span class="ri-emoji">🛒</span><span class="ri-text">Покупка (игрушка/вещь)</span><span class="ri-pts" style="background:#D4FFD8;color:var(--correct);">40 ⭐</span></div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const GOALS = [
+  { id:'ice',    emoji:'🍦', name:'Мороженое',          cost:10,  bar:'ice',    msg:'Вася заработал мороженое!' },
+  { id:'cinema', emoji:'🎬', name:'Кино',                cost:20,  bar:'cinema', msg:'Ура! Идём в кино!' },
+  { id:'shop',   emoji:'🛒', name:'Покупка (игрушка)',   cost:40,  bar:'shop',   msg:'Молодец! Выбираем покупку!' },
+];
+
+const GOOD_BEHAVIORS = [
+  { label:'📖 Сделал задание',   pts:5 },
+  { label:'📚 Почитал книгу',    pts:3 },
+  { label:'🧹 Убрал за собой',   pts:2 },
+  { label:'😴 Лёг вовремя',      pts:2 },
+  { label:'🗣️ Говорил красиво', pts:3 },
+  { label:'🤝 Был вежливым',     pts:2 },
+  { label:'🍽️ Поел сам',         pts:2 },
+  { label:'🌟 Особый поступок',  pts:5 },
+];
+
+const BAD_BEHAVIORS = [
+  { label:'😤 Грубил',              pts:-3 },
+  { label:'📵 Не отложил телефон',  pts:-2 },
+  { label:'🙅 Отказал от задания',  pts:-3 },
+  { label:'🤬 Закатил скандал',     pts:-4 },
+];
+
+const TASKS = [
+  { type:'fill', emoji:'🐻', sentence:['Медведь забрался в','BLANK1',', чтобы выспаться зимой.'], blanks:{BLANK1:{word:'берлогу',hint:'Скажи: «залез КУДА? — в берлогу»'}}, options:['берлогу','берлога','берлоге'], bubble:'Мишка спит зимой! Куда он залез?', correct_bubble:'Правильно! Медведь залез в берлогу!' },
+  { type:'fill', emoji:'🐰', sentence:['Заяц бежал по','BLANK1',', чтобы спастись от','BLANK2','.'], blanks:{BLANK1:{word:'снегу',hint:'Скажи: «бежал ПО чему? — по снегу»'},BLANK2:{word:'волка',hint:'Скажи: «спастись ОТ кого? — от волка»'}}, multiOptions:{BLANK1:['снегу','снег','снегом'],BLANK2:['волка','волку','волк']}, bubble:'Зайчик убегает! Помоги заполнить пропуски!', correct_bubble:'Ура! Зайчик убежал от волка!' },
+  { type:'fill', emoji:'🏠', sentence:['Под','BLANK1','висят сосульки. Под','BLANK2','ходить опасно.'], blanks:{BLANK1:{word:'крышей',hint:'Скажи: «под ЧЕМ? — под крышей»'},BLANK2:{word:'сосульками',hint:'Скажи: «под ЧЕМ? — под сосульками»'}}, multiOptions:{BLANK1:['крышей','крыша','крышу'],BLANK2:['сосульками','сосульки','сосулькам']}, bubble:'Осторожно — сосульки!', correct_bubble:'Отлично! Сосульки висят под крышей!' },
+  { type:'fill', emoji:'🦅', sentence:['Я вижу, что','BLANK1','нравится есть ягоды','BLANK2','.'], blanks:{BLANK1:{word:'снегирям',hint:'Скажи: «кому нравится? — снегирям»'},BLANK2:{word:'рябины',hint:'Скажи: «ягоды ЧЕГО? — ягоды рябины»'}}, multiOptions:{BLANK1:['снегирям','снегири','снегирей'],BLANK2:['рябины','рябина','рябине']}, bubble:'Птички клюют ягоды!', correct_bubble:'Здорово! Снегири любят ягоды рябины!' },
+  { type:'fill', emoji:'🐿️', sentence:['Я насыпал','BLANK1','семечек. Они лежали на','BLANK2','.'], blanks:{BLANK1:{word:'белке',hint:'Скажи: «насыпал КОМУ? — белке»'},BLANK2:{word:'снегу',hint:'Скажи: «лежали НА чём? — на снегу»'}}, multiOptions:{BLANK1:['белке','белку','белки'],BLANK2:['снегу','снег','снегом']}, bubble:'Угощение для белочки!', correct_bubble:'Умница! Ты насыпал белке семечек на снег!' },
+  { type:'fill', emoji:'🐿️', sentence:['Белка спрыгнула с','BLANK1','на снег и стала','BLANK2','их брать.'], blanks:{BLANK1:{word:'ветки',hint:'Скажи: «спрыгнула С чего? — с ветки»'},BLANK2:{word:'лапками',hint:'Скажи: «брать ЧЕМ? — лапками»'}}, multiOptions:{BLANK1:['ветки','ветку','ветке'],BLANK2:['лапками','лапки','лапок']}, bubble:'Белочка прыгает!', correct_bubble:'Супер! Белочка спрыгнула с ветки!' },
+  { type:'fill', emoji:'🦊', sentence:['Я видел, как за','BLANK1','бежала собака, но','BLANK2','не догнала.'], blanks:{BLANK1:{word:'лисой',hint:'Скажи: «бежала ЗА кем? — за лисой»'},BLANK2:{word:'лису',hint:'Скажи: «не догнала КОГО? — лису»'}}, multiOptions:{BLANK1:['лисой','лису','лиса'],BLANK2:['лису','лиса','лисой']}, bubble:'Лиска убегает от собаки!', correct_bubble:'Молодец! Собака бежала за лисой!' },
+  { type:'fill', emoji:'🦊', sentence:['Лиса спряталась в','BLANK1','.'], blanks:{BLANK1:{word:'нору',hint:'Скажи: «спряталась КУДА? — в нору»'}}, options:['нору','норе','нора'], bubble:'Куда убежала хитрая лиса?', correct_bubble:'Правильно! Лиса спряталась в нору!' },
+  { type:'whowhat', emoji:'🐴', question:'Где мальчик скачет НА коне?', hint:'Смотри — кто СИДИТ, а кто ВЕЗЁТ?', cards:[{emoji:'👦🐴',label:'Мальчик сидит на коне',correct:true},{emoji:'🐴👦',label:'Конь сидит на мальчике',correct:false}], bubble:'Кто на ком скачет?', correct_bubble:'Верно! Мальчик скачет НА коне!' },
+  { type:'whowhat', emoji:'🐱', question:'Где кошка ловит мышку?', hint:'Кто ЛОВИТ, а кто убегает?', cards:[{emoji:'🐱🐭',label:'Кошка гонится за мышкой',correct:true},{emoji:'🐭🐱',label:'Мышка гонится за кошкой',correct:false}], bubble:'Кто кого ловит?', correct_bubble:'Правильно! Кошка ловит мышку!' },
+  { type:'whowhat', emoji:'🐻', question:'Где девочка везёт на санках мишку?', hint:'Кто ВЕЗЁТ, а кто едет?', cards:[{emoji:'👧🛷🐻',label:'Девочка везёт мишку',correct:true},{emoji:'🐻🛷👧',label:'Мишка везёт девочку',correct:false}], bubble:'Кто везёт, а кто едет?', correct_bubble:'Отлично! Девочка везёт мишку на санках!' },
+  { type:'whowhat', emoji:'🐐', question:'Где девочка даёт сено козе?', hint:'Кто ДАЁТ, а кто получает?', cards:[{emoji:'👧🌾🐐',label:'Девочка даёт сено козе',correct:true},{emoji:'🐐🌾👧',label:'Коза даёт сено девочке',correct:false}], bubble:'Кто кому даёт сено?', correct_bubble:'Молодец! Девочка даёт сено козе!' },
+];
+
+// ===================== STATE =====================
+let currentTask = 0;
+let totalPoints = parseInt(localStorage.getItem('vasya_pts') || '0');
+let history = JSON.parse(localStorage.getItem('vasya_history') || '[]');
+let pendingWord = null;   // word waiting for read confirmation
+let pendingCallback = null;
+let multiStep = null;
+let selectedPicIdx = null;
+const PARENT_PIN = '1234';
+const CHARS = ['🦊','🐸','🐻','🐰','🐿️','🦉','🐼','🦁'];
+
+// ===================== SAVE =====================
+function save() {
+  localStorage.setItem('vasya_pts', totalPoints);
+  localStorage.setItem('vasya_history', JSON.stringify(history.slice(-50)));
+}
+
+// ===================== POINTS =====================
+function addPoints(pts, reason) {
+  totalPoints += pts;
+  if (totalPoints < 0) totalPoints = 0;
+  history.unshift({ pts, reason, time: new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}) });
+  save();
+  updatePtsDisplay();
+  showBanner(pts > 0 ? `+${pts} баллов! ${reason}` : `${pts} баллов. ${reason}`, pts > 0);
+  renderHistory();
+  renderGoals();
+}
+
+function updatePtsDisplay() {
+  document.getElementById('starCount').textContent = totalPoints;
+  document.getElementById('totalPtsDisplay').textContent = totalPoints;
+}
+
+// ===================== BANNER =====================
+function showBanner(text, good=true) {
+  const b = document.getElementById('bonusBanner');
+  b.textContent = (good ? '🎉 ' : '⚡ ') + text;
+  b.style.background = good ? 'linear-gradient(135deg,#FFD700,#FF9F43)' : 'linear-gradient(135deg,#FF6B6B,#FF9F43)';
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 2500);
+}
+
+// ===================== AUDIO =====================
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, dur, type='sine', vol=0.3) {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+function playCorrect() { playTone(523,.15); setTimeout(()=>playTone(659,.15),120); setTimeout(()=>playTone(784,.25),240); }
+function playWrong()   { playTone(300,.18,'sawtooth',.2); setTimeout(()=>playTone(250,.25,'sawtooth',.2),150); }
+function playWin()     { [523,587,659,698,784,880].forEach((f,i)=>setTimeout(()=>playTone(f,.2,'sine',.35),i*100)); }
+
+function speakWord() {
+  if (!pendingWord) return;
+  if ('speechSynthesis' in window) {
+    const u = new SpeechSynthesisUtterance(pendingWord);
+    u.lang = 'ru-RU'; u.rate = 0.85;
+    speechSynthesis.speak(u);
+  }
+  // Show confirm button after listening
+  document.getElementById('confirmReadBtn').classList.add('show');
+}
+
+// ===================== CONFETTI =====================
+function confetti() {
+  const colors = ['#FFD700','#FF6B6B','#6EC6F5','#5DBB63','#FF9F43','#A29BFE'];
+  for (let i = 0; i < 24; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `left:${Math.random()*100}vw;top:-20px;width:${8+Math.random()*10}px;height:${8+Math.random()*10}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};transform:rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }, i * 55);
+  }
+}
+
+// ===================== TABS =====================
+function showTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tab+'Screen').classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'rewards') { renderGoals(); renderHistory(); }
+}
+
+// ===================== RENDER TASK =====================
+function renderTask() {
+  const task = TASKS[currentTask];
+  document.getElementById('taskCard').innerHTML = '';
+  document.getElementById('readBox').classList.remove('show');
+  document.getElementById('confirmReadBtn').classList.remove('show');
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('hintWrap').style.display = 'block';
+  document.getElementById('hintText').style.display = 'none';
+  pendingWord = null; pendingCallback = null; selectedPicIdx = null; multiStep = null;
+
+  document.getElementById('character').textContent = CHARS[currentTask % CHARS.length];
+  setBubble(task.bubble);
+  document.getElementById('taskNum').textContent = currentTask + 1;
+  document.getElementById('taskTotal').textContent = TASKS.length;
+  document.getElementById('progressFill').style.width = (currentTask / TASKS.length * 100) + '%';
+
+  if (task.type === 'fill') renderFill(task);
+  else renderWhoWhat(task);
+}
+
+function setBubble(t) { document.getElementById('bubble').textContent = t; }
+
+// ===================== FILL TASK =====================
+function renderFill(task) {
+  const card = document.getElementById('taskCard');
+  const blankKeys = Object.keys(task.blanks);
+  let html = `<span class="task-badge">🖊️ Вставь нужное слово</span>`;
+  html += `<span class="task-emoji">${task.emoji}</span>`;
+  html += `<div class="sentence-parts">`;
+  task.sentence.forEach(part => {
+    if (blankKeys.includes(part)) {
+      html += `<span class="blank-slot" id="slot_${part}">_____</span>`;
+    } else {
+      html += `<span>${part}</span>`;
+    }
+  });
+  html += `</div>`;
+
+  if (task.options) {
+    html += `<div class="options" id="optionsArea">`;
+    task.options.forEach(opt => {
+      const correct = task.blanks[blankKeys[0]].word === opt;
+      html += `<button class="opt-btn" onclick="selectFill('${blankKeys[0]}','${opt}',this,${correct})">${opt}</button>`;
+    });
+    html += `</div>`;
+  } else {
+    multiStep = { keys: blankKeys, step: 0, task };
+    html += `<div id="multiPrompt" style="font-size:.85rem;color:#666;font-weight:700;margin-bottom:6px;text-align:center;">Выбери слово для первого пропуска ↑</div>`;
+    html += `<div class="options" id="optionsArea">`;
+    task.multiOptions[blankKeys[0]].forEach(opt => {
+      const correct = task.blanks[blankKeys[0]].word === opt;
+      html += `<button class="opt-btn" onclick="selectMultiFill('${blankKeys[0]}','${opt}',this,${correct})">${opt}</button>`;
+    });
+    html += `</div>`;
+  }
+  card.innerHTML = html;
+  document.getElementById('hintText').textContent = task.blanks[blankKeys[0]].hint;
+}
+
+// User selects an option → show read box
+function selectFill(key, chosen, btn, isCorrect) {
+  // highlight selected
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected-opt'));
+  btn.classList.add('selected-opt');
+  // show read box
+  showReadBox(chosen, () => checkFill(key, chosen, btn, isCorrect));
+}
+
+function checkFill(key, chosen, btn, isCorrect) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  const slot = document.getElementById('slot_' + key);
+  if (isCorrect) {
+    slot.textContent = chosen; slot.classList.add('filled');
+    btn.classList.remove('selected-opt'); btn.classList.add('correct-opt');
+    onCorrect();
+  } else {
+    slot.textContent = chosen; slot.classList.add('wrong-slot');
+    btn.classList.remove('selected-opt'); btn.classList.add('wrong-opt');
+    onWrong(TASKS[currentTask].blanks[key].hint);
+    setTimeout(() => {
+      slot.textContent = '_____'; slot.classList.remove('wrong-slot');
+      document.querySelectorAll('.opt-btn').forEach(b => { b.disabled=false; b.classList.remove('wrong-opt','selected-opt'); });
+    }, 1400);
+  }
+}
+
+function selectMultiFill(key, chosen, btn, isCorrect) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected-opt'));
+  btn.classList.add('selected-opt');
+  showReadBox(chosen, () => checkMultiFill(key, chosen, btn, isCorrect));
+}
+
+function checkMultiFill(key, chosen, btn, isCorrect) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  const slot = document.getElementById('slot_' + key);
+  const task = multiStep.task; const keys = multiStep.keys;
+  if (isCorrect) {
+    slot.textContent = chosen; slot.classList.add('filled');
+    btn.classList.remove('selected-opt'); btn.classList.add('correct-opt');
+    playCorrect();
+    multiStep.step++;
+    if (multiStep.step < keys.length) {
+      const nextKey = keys[multiStep.step];
+      setTimeout(() => {
+        document.getElementById('multiPrompt').textContent = 'Отлично! Теперь выбери следующее слово ↑';
+        const optArea = document.getElementById('optionsArea');
+        optArea.innerHTML = '';
+        task.multiOptions[nextKey].forEach(opt => {
+          const c2 = task.blanks[nextKey].word === opt;
+          const b2 = document.createElement('button');
+          b2.className = 'opt-btn';
+          b2.textContent = opt;
+          b2.onclick = () => selectMultiFill(nextKey, opt, b2, c2);
+          optArea.appendChild(b2);
+        });
+        document.getElementById('hintText').textContent = task.blanks[nextKey].hint;
+        document.getElementById('hintText').style.display = 'none';
+      }, 600);
+    } else { onCorrect(); }
+  } else {
+    slot.textContent = chosen; slot.classList.add('wrong-slot');
+    btn.classList.remove('selected-opt'); btn.classList.add('wrong-opt');
+    onWrong(task.blanks[key].hint);
+    setTimeout(() => {
+      slot.textContent = '_____'; slot.classList.remove('wrong-slot');
+      document.querySelectorAll('.opt-btn').forEach(b => { b.disabled=false; b.classList.remove('wrong-opt','selected-opt'); });
+    }, 1400);
+  }
+}
+
+// ===================== WHO-WHAT TASK =====================
+function renderWhoWhat(task) {
+  let html = `<span class="task-badge">🔍 Кто что делает?</span>`;
+  html += `<span class="task-emoji">${task.emoji}</span>`;
+  html += `<div class="task-text" style="font-size:clamp(1rem,3vw,1.2rem);font-weight:800;color:var(--night);margin-bottom:10px;">${task.question}</div>`;
+  html += `<div class="picture-pair">`;
+  task.cards.forEach((c, i) => {
+    html += `<div class="picture-card" id="pic_${i}" onclick="selectPic(${i})">
+      <span class="pic-emoji">${c.emoji}</span>
+      <span class="pic-label">${c.label}</span>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('taskCard').innerHTML = html;
+  document.getElementById('hintText').textContent = task.hint;
+}
+
+function selectPic(idx) {
+  if (document.querySelector('.picture-card.disabled')) return;
+  // highlight
+  document.querySelectorAll('.picture-card').forEach((c,i) => {
+    c.classList.remove('selected-card');
+    if (i === idx) c.classList.add('selected-card');
+  });
+  selectedPicIdx = idx;
+  const label = TASKS[currentTask].cards[idx].label;
+  showReadBox(label, () => checkPic(idx));
+}
+
+function checkPic(idx) {
+  const task = TASKS[currentTask];
+  document.querySelectorAll('.picture-card').forEach(c => { c.classList.add('disabled'); c.onclick = null; });
+  const chosen = task.cards[idx];
+  const pic = document.getElementById('pic_' + idx);
+  pic.classList.remove('selected-card');
+  if (chosen.correct) {
+    pic.classList.add('correct-card');
+    onCorrect();
+  } else {
+    pic.classList.add('wrong-card');
+    task.cards.forEach((c, i) => { if (c.correct) document.getElementById('pic_'+i).classList.add('correct-card'); });
+    onWrong(task.hint);
+  }
+}
+
+// ===================== READ BOX =====================
+function showReadBox(word, callback) {
+  pendingWord = word;
+  pendingCallback = callback;
+  document.getElementById('readWord').textContent = word;
+  document.getElementById('confirmReadBtn').classList.remove('show');
+  document.getElementById('readBox').classList.add('show');
+  document.getElementById('readBox').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function confirmRead() {
+  document.getElementById('readBox').classList.remove('show');
+  if (pendingCallback) { pendingCallback(); pendingCallback = null; }
+}
+
+// ===================== OUTCOME =====================
+function onCorrect() {
+  playCorrect(); confetti();
+  addPoints(3, 'Правильный ответ в игре');
+  const ch = document.getElementById('character');
+  ch.className = 'character celebrate';
+  setTimeout(() => ch.className = 'character', 700);
+  const fb = document.getElementById('feedback');
+  fb.textContent = '✅ ' + TASKS[currentTask].correct_bubble;
+  fb.className = 'feedback correct'; fb.style.display = 'block';
+  setBubble(TASKS[currentTask].correct_bubble);
+  document.getElementById('nextBtn').style.display = 'block';
+  document.getElementById('hintWrap').style.display = 'none';
+}
+
+function onWrong(hint) {
+  playWrong();
+  const ch = document.getElementById('character');
+  ch.className = 'character sad';
+  setTimeout(() => ch.className = 'character', 600);
+  const fb = document.getElementById('feedback');
+  fb.textContent = '❌ Попробуй ещё раз! ' + (hint || '');
+  fb.className = 'feedback wrong'; fb.style.display = 'block';
+  setTimeout(() => fb.style.display = 'none', 2200);
+  setBubble('Ой! Попробуй ещё раз, Вася!');
+}
+
+// ===================== NEXT / WIN =====================
+function nextTask() {
+  currentTask++;
+  if (currentTask >= TASKS.length) showWin();
+  else renderTask();
+}
+
+function showWin() {
+  document.getElementById('gameArea').style.display = 'none';
+  document.getElementById('winScreen').classList.add('active');
+  document.getElementById('winStars').textContent = '⭐'.repeat(Math.min(totalPoints, 10));
+  document.getElementById('winMsg').textContent = `Ты набрал ${totalPoints} баллов в копилке!`;
+  addPoints(5, 'Завершил все задания!');
+  playWin(); confetti(); confetti();
+}
+
+function restart() {
+  currentTask = 0;
+  document.getElementById('gameArea').style.display = 'block';
+  document.getElementById('winScreen').classList.remove('active');
+  renderTask();
+}
+
+// ===================== HINT =====================
+function showHint() {
+  const ht = document.getElementById('hintText');
+  ht.style.display = ht.style.display === 'block' ? 'none' : 'block';
+}
+
+// ===================== REWARDS =====================
+function renderGoals() {
+  const container = document.getElementById('rewardGoals');
+  container.innerHTML = '';
+  GOALS.forEach(g => {
+    const pct = Math.min(100, Math.round(totalPoints / g.cost * 100));
+    const unlocked = totalPoints >= g.cost;
+    const div = document.createElement('div');
+    div.className = 'reward-goal' + (unlocked ? ' unlocked' : '');
+    div.innerHTML = `
+      ${unlocked ? `<div class="rg-unlock-label">✅ Заработал!</div>` : ''}
+      <div class="rg-top">
+        <span class="rg-emoji">${g.emoji}</span>
+        <div class="rg-info">
+          <div class="rg-name">${g.name}</div>
+          <div class="rg-need">${unlocked ? g.msg : `Нужно ${g.cost} ⭐ — у тебя ${totalPoints}`}</div>
+        </div>
+      </div>
+      <div class="rg-bar-wrap"><div class="rg-bar ${g.bar}" style="width:${pct}%"></div></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!history.length) { list.innerHTML = '<div style="color:#aaa;font-size:.85rem;text-align:center;">Пока пусто</div>'; return; }
+  list.innerHTML = history.slice(0,20).map(h => `
+    <div class="history-item">
+      <span class="hi-pts ${h.pts>0?'pos':'neg'}">${h.pts>0?'+':''}${h.pts} ⭐</span>
+      <span>${h.reason}</span>
+      <span class="hi-time">${h.time}</span>
+    </div>`).join('');
+}
+
+// ===================== PARENT PANEL =====================
+function checkPin() {
+  const pin = document.getElementById('pinInput').value;
+  if (pin === PARENT_PIN) {
+    document.getElementById('parentPanel').classList.add('show');
+    renderBehaviorBtns();
+  } else {
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').placeholder = 'Неверно!';
+    setTimeout(() => document.getElementById('pinInput').placeholder = '----', 1500);
+  }
+}
+
+function renderBehaviorBtns() {
+  const good = document.getElementById('goodGrid');
+  const bad  = document.getElementById('badGrid');
+  good.innerHTML = '';
+  bad.innerHTML = '';
+  GOOD_BEHAVIORS.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'beh-btn plus';
+    btn.innerHTML = `${b.label}<span class="beh-pts">+${b.pts} ⭐</span>`;
+    btn.onclick = () => addPoints(b.pts, b.label);
+    good.appendChild(btn);
+  });
+  BAD_BEHAVIORS.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'beh-btn minus';
+    btn.innerHTML = `${b.label}<span class="beh-pts">${b.pts} ⭐</span>`;
+    btn.onclick = () => addPoints(b.pts, b.label);
+    bad.appendChild(btn);
+  });
+}
+
+// ===================== INIT =====================
+updatePtsDisplay();
+renderGoals();
+renderHistory();
+renderTask();
+</script>
+</body>
+</html>
